@@ -10,6 +10,12 @@ type Foo struct {
 	IntVal    int
 	FloatVal  float32
 	StringVal string
+	Bar       Bar
+	FooPtr    *Foo
+}
+
+type Bar struct {
+	StringVal string
 }
 
 func TestComputeDiff(t *testing.T) {
@@ -17,11 +23,21 @@ func TestComputeDiff(t *testing.T) {
 		IntVal:    42,
 		FloatVal:  53.032,
 		StringVal: "bar",
+		Bar: Bar{
+			StringVal: "ok",
+		},
+		FooPtr: nil,
 	}
 	f2 := Foo{
 		IntVal:    42,
 		FloatVal:  53.042,
 		StringVal: "baraca",
+		Bar: Bar{
+			StringVal: "ok",
+		},
+		FooPtr: &Foo{
+			IntVal: 42,
+		},
 	}
 	delta, err := ComputeDiff(f1, f2, false)
 	if err != nil {
