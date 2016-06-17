@@ -68,6 +68,9 @@ func Compute(x, y interface{}, recursive bool) (Diff, error) {
 	for i := 0; i < xNumFields; i++ {
 		fx := vx.Field(i)
 		typ := tx.Field(i)
+		if typ.Anonymous {
+			continue
+		}
 		fy := vy.FieldByName(typ.Name)
 
 		if d := handleValue(fx, fy); d != nil {
@@ -87,6 +90,9 @@ func handleValue(fx, fy reflect.Value) interface{} {
 		for i := 0; i < numFields; i++ {
 			newFx := fx.Field(i)
 			typ := fx.Type().Field(i)
+			if typ.Anonymous {
+				continue
+			}
 			newFy := fy.FieldByName(typ.Name)
 
 			if d := handleValue(newFx, newFy); d != nil {
