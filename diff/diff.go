@@ -69,7 +69,7 @@ func Compute(x, y interface{}, recursive bool) (Diff, error) {
 	for i := 0; i < xNumFields; i++ {
 		fx := vx.Field(i)
 		typ := tx.Field(i)
-		if isExported(typ.Name) { // skip non-exported fields
+		if !isExported(typ.Name) { // skip non-exported fields
 			continue
 		}
 		fy := vy.FieldByName(typ.Name)
@@ -86,12 +86,19 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	switch fx.Kind() {
 
 	case reflect.Struct:
+		if isFullyNonExportedStruct(fx) {
+			if fx.String() != fy.String() {
+				return Change{OldVal: fx.Interface(), fy.Interface()}
+			}
+			return nil
+		}
+
 		delta := make(Diff)
 		numFields := fx.NumField()
 		for i := 0; i < numFields; i++ {
 			newFx := fx.Field(i)
 			typ := fx.Type().Field(i)
-			if isExported(typ.Name) { // skip non-exported fields
+			if !isExported(typ.Name) { // skip non-exported fields
 				continue
 			}
 			newFy := fy.FieldByName(typ.Name)
@@ -193,4 +200,18 @@ func isExported(fieldName string) bool {
 	}
 	firstLetter := string(fieldName[0])
 	return firstLetter != strings.ToLower(firstLetter)
+}
+
+func isFullyNonExportedStruct(s reflect.Value) bool {
+	if s.Kind() != reflect.Struct {
+		return false
+	}
+	numFields := s.NumField()
+	for i := 0; i < numFields; i++ {
+		typ := fx.Type().Field(i)
+		if isExported(typ.Name) {
+			return false
+		}
+	}
+	return true
 }
