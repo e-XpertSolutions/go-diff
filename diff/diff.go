@@ -80,9 +80,15 @@ func handleValue(fx, fy reflect.Value) interface{} {
 			newFx := fx.Field(i)
 			typ := fx.Type().Field(i)
 			newFy := fy.FieldByName(typ.Name)
-			delta[typ.Name] = handleValue(newFx, newFy)
+
+			if d := handleValue(newFx, newFy); d != nil {
+				delta[typ.Name] = d
+			}
 		}
-		return delta
+		if len(delta) > 0 {
+			return delta
+		}
+		return nil
 
 	case reflect.Array, reflect.Slice:
 		xLen, yLen := fx.Len(), fy.Len()
