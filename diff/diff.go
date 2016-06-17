@@ -29,8 +29,9 @@ type Change struct {
 type ChangeType string
 
 const (
-	AddType ChangeType = "ADD"
-	DelType ChangeType = "DEL"
+	AddType ChangeType = "ADD" // addition
+	DelType ChangeType = "DEL" // deletion
+	ModType ChangeType = "MOD" // modification
 )
 
 type CollectionChange struct {
