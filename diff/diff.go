@@ -8,6 +8,7 @@ package diff
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -87,7 +88,7 @@ func handleValue(fx, fy reflect.Value) interface{} {
 
 	case reflect.Struct:
 		if isFullyNonExportedStruct(fx) {
-			if fx.String() != fy.String() {
+			if !isEqual(fx, fy) {
 				return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
 			}
 			return nil
@@ -214,4 +215,8 @@ func isFullyNonExportedStruct(s reflect.Value) bool {
 		}
 	}
 	return true
+}
+
+func isEqual(x, y reflect.Value) bool {
+	return fmt.Sprint(x.Interface()) == fmt.Sprint(y.Interface())
 }
