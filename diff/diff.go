@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"strconv"
 )
 
 type Diff map[string]interface{}
@@ -86,25 +87,41 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	case reflect.Array, reflect.Slice:
 		xLen, yLen := fx.Len(), fy.Len()
 
-		changes := make(map[int]CollectionChange)
+		changes := make(map[string]CollectionChange)
 		if xLen == 0 {
 			if yLen == 0 {
 				return nil
 			}
 			for i := 0; i < yLen; i++ {
-				changes[i] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
+				changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
 			}
 		} else if yLen == 0 {
-			changes := make(map[int]CollectionChange)
 			for i := 0; i < xLen; i++ {
-				changes[i] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
+				changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
 			}
 		} else {
-			for i := 0; i < xLen; i++ {
-				// TODO(gilliek): implement
+			var maxLen int
+			if xLen > yLen {
+				maxLen = yLen
+				for i := yLen; i < xLen; i++ {
+					changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
+				}
+			} else if xLen < yLen {
+				maxLen = xLen
+				for i := xLen; i < yLen; i++ {
+					changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
+				}
+			}
+			for i := 0; i < maxLen; i++ {
+				if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
+					changes[strconv.Itoa(i)] = CollectionChange{Val: d, Type: ModType}
+				}
 			}
 		}
-		return changes
+		if len(changes) > 0 {
+			return changes
+		}
+		return nil
 
 	case reflect.Map:
 		return nil
