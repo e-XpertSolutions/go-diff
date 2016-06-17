@@ -40,7 +40,7 @@ type CollectionChange struct {
 	Type ChangeType  `json:"type"`
 }
 
-func ComputeDiff(x, y interface{}, recursive bool) (Diff, error) {
+func Compute(x, y interface{}, recursive bool) (Diff, error) {
 	vx, vy := reflect.ValueOf(x), reflect.ValueOf(y)
 	tx, ty := vx.Type(), vy.Type()
 
