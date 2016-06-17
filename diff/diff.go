@@ -88,7 +88,7 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	case reflect.Struct:
 		if isFullyNonExportedStruct(fx) {
 			if fx.String() != fy.String() {
-				return Change{OldVal: fx.Interface(), fy.Interface()}
+				return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
 			}
 			return nil
 		}
@@ -208,7 +208,7 @@ func isFullyNonExportedStruct(s reflect.Value) bool {
 	}
 	numFields := s.NumField()
 	for i := 0; i < numFields; i++ {
-		typ := fx.Type().Field(i)
+		typ := s.Type().Field(i)
 		if isExported(typ.Name) {
 			return false
 		}
