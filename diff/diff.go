@@ -10,6 +10,7 @@ import (
 	"errors"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Diff map[string]interface{}
@@ -68,7 +69,7 @@ func Compute(x, y interface{}, recursive bool) (Diff, error) {
 	for i := 0; i < xNumFields; i++ {
 		fx := vx.Field(i)
 		typ := tx.Field(i)
-		if typ.Anonymous {
+		if isExported(typ.Name) { // skip non-exported fields
 			continue
 		}
 		fy := vy.FieldByName(typ.Name)
@@ -90,7 +91,7 @@ func handleValue(fx, fy reflect.Value) interface{} {
 		for i := 0; i < numFields; i++ {
 			newFx := fx.Field(i)
 			typ := fx.Type().Field(i)
-			if typ.Anonymous {
+			if isExported(typ.Name) { // skip non-exported fields
 				continue
 			}
 			newFy := fy.FieldByName(typ.Name)
@@ -184,4 +185,12 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	}
 
 	return nil
+}
+
+func isExported(fieldName string) bool {
+	if fieldName == "" {
+		return false
+	}
+	firstLetter := string(fieldName[0])
+	return firstLetter != strings.ToLower(firstLetter)
 }
