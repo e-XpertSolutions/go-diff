@@ -12,13 +12,14 @@ type Foo struct {
 	StringVal string
 	Bar       Bar
 	FooPtr    *Foo
+	IntList   []int
 }
 
 type Bar struct {
 	StringVal string
 }
 
-func TestComputeDiff(t *testing.T) {
+func TestCompute(t *testing.T) {
 	f1 := Foo{
 		IntVal:    42,
 		FloatVal:  53.032,
@@ -26,7 +27,8 @@ func TestComputeDiff(t *testing.T) {
 		Bar: Bar{
 			StringVal: "ok",
 		},
-		FooPtr: nil,
+		FooPtr:  nil,
+		IntList: []int{1, 3, 4},
 	}
 	f2 := Foo{
 		IntVal:    42,
@@ -38,8 +40,9 @@ func TestComputeDiff(t *testing.T) {
 		FooPtr: &Foo{
 			IntVal: 42,
 		},
+		IntList: []int{1, 2, 4, 5},
 	}
-	delta, err := ComputeDiff(f1, f2, false)
+	delta, err := Compute(f1, f2, false)
 	if err != nil {
 		t.Fatal("Failed to compute diff: ", err)
 	}
