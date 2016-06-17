@@ -14,6 +14,14 @@ import (
 
 type Diff map[string]interface{}
 
+func (d Diff) PrettyJSON() []byte {
+	bs, err := json.MarshalIndent(d, "", "   ")
+	if err != nil {
+		return []byte{}
+	}
+	return bs
+}
+
 func (d Diff) JSON() []byte {
 	bs, err := json.MarshalIndent(d, "", "   ")
 	if err != nil {
