@@ -14,8 +14,11 @@ import (
 	"strings"
 )
 
+// A Diff represents the changes between two structures.
 type Diff map[string]interface{}
 
+// PrettyJSON serializes the Diff into JSON in a indented (hence human readable)
+// way.
 func (d Diff) PrettyJSON() []byte {
 	bs, err := json.MarshalIndent(d, "", "   ")
 	if err != nil {
@@ -24,6 +27,7 @@ func (d Diff) PrettyJSON() []byte {
 	return bs
 }
 
+// JSON serializes the Diff into JSON in a compact format (no indentation).
 func (d Diff) JSON() []byte {
 	bs, err := json.MarshalIndent(d, "", "   ")
 	if err != nil {
@@ -39,6 +43,7 @@ type Change struct {
 
 type ChangeType string
 
+// Possible values for a ChangeType.
 const (
 	AddType ChangeType = "ADD" // addition
 	DelType ChangeType = "DEL" // deletion
