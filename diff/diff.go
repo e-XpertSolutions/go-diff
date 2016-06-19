@@ -36,11 +36,6 @@ func (d Diff) JSON() []byte {
 	return bs
 }
 
-type Change struct {
-	OldVal interface{} `json:"old_value"`
-	NewVal interface{} `json:"new_value"`
-}
-
 type ChangeType string
 
 // Possible values for a ChangeType.
@@ -49,6 +44,11 @@ const (
 	DelType ChangeType = "DEL" // deletion
 	ModType ChangeType = "MOD" // modification
 )
+
+type Change struct {
+	OldVal interface{} `json:"old_value"`
+	NewVal interface{} `json:"new_value"`
+}
 
 type CollectionChange struct {
 	Val  interface{} `json:"value"`
@@ -92,71 +92,9 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	switch fx.Kind() {
 
 	case reflect.Struct:
-		if isFullyNonExportedStruct(fx) {
-			if !isEqual(fx, fy) {
-				return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
-			}
-			return nil
-		}
-
-		delta := make(Diff)
-		numFields := fx.NumField()
-		for i := 0; i < numFields; i++ {
-			newFx := fx.Field(i)
-			typ := fx.Type().Field(i)
-			if !isExported(typ.Name) { // skip non-exported fields
-				continue
-			}
-			newFy := fy.FieldByName(typ.Name)
-
-			if d := handleValue(newFx, newFy); d != nil {
-				delta[typ.Name] = d
-			}
-		}
-		if len(delta) > 0 {
-			return delta
-		}
-		return nil
-
+		return handleStruct(fx, fy)
 	case reflect.Array, reflect.Slice:
-		xLen, yLen := fx.Len(), fy.Len()
-
-		changes := make(map[string]CollectionChange)
-		if xLen == 0 {
-			if yLen == 0 {
-				return nil
-			}
-			for i := 0; i < yLen; i++ {
-				changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
-			}
-		} else if yLen == 0 {
-			for i := 0; i < xLen; i++ {
-				changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
-			}
-		} else {
-			var maxLen int
-			if xLen > yLen {
-				maxLen = yLen
-				for i := yLen; i < xLen; i++ {
-					changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
-				}
-			} else if xLen < yLen {
-				maxLen = xLen
-				for i := xLen; i < yLen; i++ {
-					changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
-				}
-			}
-			for i := 0; i < maxLen; i++ {
-				if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
-					changes[strconv.Itoa(i)] = CollectionChange{Val: d, Type: ModType}
-				}
-			}
-		}
-		if len(changes) > 0 {
-			return changes
-		}
-		return nil
-
+		return handleSlice(fx, fy)
 	case reflect.Map:
 		return nil
 
@@ -197,6 +135,74 @@ func handleValue(fx, fy reflect.Value) interface{} {
 		}
 	}
 
+	return nil
+}
+
+func handleStruct(fx, fy reflect.Value) interface{} {
+	if isFullyNonExportedStruct(fx) {
+		if !isEqual(fx, fy) {
+			return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
+		}
+		return nil
+	}
+
+	delta := make(Diff)
+	numFields := fx.NumField()
+	for i := 0; i < numFields; i++ {
+		newFx := fx.Field(i)
+		typ := fx.Type().Field(i)
+		if !isExported(typ.Name) { // skip non-exported fields
+			continue
+		}
+		newFy := fy.FieldByName(typ.Name)
+
+		if d := handleValue(newFx, newFy); d != nil {
+			delta[typ.Name] = d
+		}
+	}
+	if len(delta) > 0 {
+		return delta
+	}
+	return nil
+}
+
+func handleSlice(fx, fy reflect.Value) interface{} {
+	xLen, yLen := fx.Len(), fy.Len()
+
+	changes := make(map[string]CollectionChange)
+	if xLen == 0 {
+		if yLen == 0 {
+			return nil
+		}
+		for i := 0; i < yLen; i++ {
+			changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
+		}
+	} else if yLen == 0 {
+		for i := 0; i < xLen; i++ {
+			changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
+		}
+	} else {
+		var maxLen int
+		if xLen > yLen {
+			maxLen = yLen
+			for i := yLen; i < xLen; i++ {
+				changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
+			}
+		} else if xLen < yLen {
+			maxLen = xLen
+			for i := xLen; i < yLen; i++ {
+				changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
+			}
+		}
+		for i := 0; i < maxLen; i++ {
+			if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
+				changes[strconv.Itoa(i)] = CollectionChange{Val: d, Type: ModType}
+			}
+		}
+	}
+	if len(changes) > 0 {
+		return changes
+	}
 	return nil
 }
 
