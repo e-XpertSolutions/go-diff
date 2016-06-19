@@ -17,6 +17,11 @@ import (
 // A Diff represents the changes between two structures.
 type Diff map[string]interface{}
 
+// HasChange report whether the Diff contains some changes.
+func (d Diff) HasChange() bool {
+	return len(d) > 0
+}
+
 // PrettyJSON serializes the Diff into JSON in a indented (hence human readable)
 // way.
 func (d Diff) PrettyJSON() []byte {
