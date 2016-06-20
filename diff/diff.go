@@ -34,7 +34,7 @@ func (d Diff) PrettyJSON() []byte {
 
 // JSON serializes the Diff into JSON in a compact format (no indentation).
 func (d Diff) JSON() []byte {
-	bs, err := json.MarshalIndent(d, "", "   ")
+	bs, err := json.Marshal(d, "", "   ")
 	if err != nil {
 		return []byte{}
 	}
