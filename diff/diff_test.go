@@ -13,6 +13,7 @@ type Foo struct {
 	Bar       Bar
 	FooPtr    *Foo
 	IntList   []int
+	BarList   []Bar
 }
 
 type Bar struct {
@@ -29,6 +30,7 @@ func TestCompute(t *testing.T) {
 		},
 		FooPtr:  nil,
 		IntList: []int{1, 3, 4},
+		BarList: []Bar{{StringVal: "aaa"}, {StringVal: "bbb"}},
 	}
 	f2 := Foo{
 		IntVal:    42,
@@ -41,6 +43,7 @@ func TestCompute(t *testing.T) {
 			IntVal: 42,
 		},
 		IntList: []int{1, 2, 4, 5},
+		BarList: []Bar{{StringVal: "ccc"}, {StringVal: "ddd"}},
 	}
 	delta, err := Compute(f1, f2, false)
 	if err != nil {
