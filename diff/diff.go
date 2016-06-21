@@ -170,7 +170,7 @@ func handleStruct(fx, fy reflect.Value) interface{} {
 func handleSlice(fx, fy reflect.Value) interface{} {
 	xLen, yLen := fx.Len(), fy.Len()
 
-	changes := make(Diff)
+	changes := make(map[string]Change)
 	if xLen == 0 {
 		if yLen == 0 {
 			return nil
@@ -197,7 +197,7 @@ func handleSlice(fx, fy reflect.Value) interface{} {
 		}
 		for i := 0; i < maxLen; i++ {
 			if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
-				changes[strconv.Itoa(i)] = d
+				changes[strconv.Itoa(i)] = Change{NewVal: d, Type: ModType}
 			}
 		}
 	}
