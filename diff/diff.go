@@ -57,17 +57,16 @@ type Change struct {
 }
 
 func Compute(x, y interface{}) (Diff, error) {
-	engine := DiffEngine{}
-	return engine.Compute(x, y)
+	return Engine{}.Compute(x, y)
 }
 
-type DiffEngine struct {
+type Engine struct {
 	ExcludeFieldList []string
 	Recursive        bool
 }
 
-func (de DiffEngine) IsIngored(field string) bool {
-	for _, f := range de.ExcludeFieldList {
+func (e Engine) IsIgnored(field string) bool {
+	for _, f := range e.ExcludeFieldList {
 		if f == field {
 			return true
 		}
@@ -75,7 +74,7 @@ func (de DiffEngine) IsIngored(field string) bool {
 	return false
 }
 
-func (de DiffEngine) Compute(x, y interface{}) (Diff, error) {
+func (e Engine) Compute(x, y interface{}) (Diff, error) {
 	vx, vy := reflect.ValueOf(x), reflect.ValueOf(y)
 	tx, ty := vx.Type(), vy.Type()
 
@@ -97,13 +96,13 @@ func (de DiffEngine) Compute(x, y interface{}) (Diff, error) {
 		typ := tx.Field(i)
 
 		// skip non-exported fields and the ones that are excluded
-		if !isExported(typ.Name) || de.IsIngored(typ.Name) {
+		if !isExported(typ.Name) || e.IsIgnored(typ.Name) {
 			continue
 		}
 
 		fy := vy.FieldByName(typ.Name)
 
-		if d := de.handleValue(fx, fy); d != nil {
+		if d := e.handleValue(fx, fy); d != nil {
 			delta[typ.Name] = d
 		}
 	}
@@ -111,13 +110,13 @@ func (de DiffEngine) Compute(x, y interface{}) (Diff, error) {
 	return delta, nil
 }
 
-func (de DiffEngine) handleValue(fx, fy reflect.Value) interface{} {
+func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
 	switch fx.Kind() {
 
 	case reflect.Struct:
-		return de.handleStruct(fx, fy)
+		return e.handleStruct(fx, fy)
 	case reflect.Array, reflect.Slice:
-		return de.handleSlice(fx, fy)
+		return e.handleSlice(fx, fy)
 	case reflect.Map:
 		return nil
 
@@ -130,7 +129,7 @@ func (de DiffEngine) handleValue(fx, fy reflect.Value) interface{} {
 		} else if fy.IsNil() {
 			return Change{OldVal: fx.Elem().Interface(), NewVal: nil, Type: ModType}
 		}
-		return de.handleValue(fx.Elem(), fy.Elem())
+		return e.handleValue(fx.Elem(), fy.Elem())
 
 	case reflect.Interface, reflect.Func, reflect.Chan, reflect.Invalid, reflect.UnsafePointer, reflect.Complex64, reflect.Complex128:
 		// TODO(gilliek): support complex numbers
@@ -161,7 +160,7 @@ func (de DiffEngine) handleValue(fx, fy reflect.Value) interface{} {
 	return nil
 }
 
-func (de DiffEngine) handleStruct(fx, fy reflect.Value) interface{} {
+func (e Engine) handleStruct(fx, fy reflect.Value) interface{} {
 	if isFullyNonExportedStruct(fx) {
 		if !isEqual(fx, fy) {
 			return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
@@ -176,13 +175,13 @@ func (de DiffEngine) handleStruct(fx, fy reflect.Value) interface{} {
 		typ := fx.Type().Field(i)
 
 		// skip non-exported fields and the ones that are excluded
-		if !isExported(typ.Name) || de.IsIngored(typ.Name) {
+		if !isExported(typ.Name) || e.IsIgnored(typ.Name) {
 			continue
 		}
 
 		newFy := fy.FieldByName(typ.Name)
 
-		if d := de.handleValue(newFx, newFy); d != nil {
+		if d := e.handleValue(newFx, newFy); d != nil {
 			delta[typ.Name] = d
 		}
 	}
@@ -192,7 +191,7 @@ func (de DiffEngine) handleStruct(fx, fy reflect.Value) interface{} {
 	return nil
 }
 
-func (de DiffEngine) handleSlice(fx, fy reflect.Value) interface{} {
+func (e Engine) handleSlice(fx, fy reflect.Value) interface{} {
 	xLen, yLen := fx.Len(), fy.Len()
 
 	changes := make(map[string]Change)
@@ -223,7 +222,7 @@ func (de DiffEngine) handleSlice(fx, fy reflect.Value) interface{} {
 			maxLen = xLen
 		}
 		for i := 0; i < maxLen; i++ {
-			if d := de.handleValue(fx.Index(i), fy.Index(i)); d != nil {
+			if d := e.handleValue(fx.Index(i), fy.Index(i)); d != nil {
 				changes[strconv.Itoa(i)] = Change{NewVal: d, Type: ModType}
 			}
 		}
