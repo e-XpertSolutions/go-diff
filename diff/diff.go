@@ -194,6 +194,8 @@ func handleSlice(fx, fy reflect.Value) interface{} {
 			for i := xLen; i < yLen; i++ {
 				changes[strconv.Itoa(i)] = Change{NewVal: fy.Index(i).Interface(), Type: AddType}
 			}
+		} else {
+			maxLen = xLen
 		}
 		for i := 0; i < maxLen; i++ {
 			if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
