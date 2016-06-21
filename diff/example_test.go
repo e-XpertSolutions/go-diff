@@ -46,7 +46,19 @@ func Example() {
 		},
 		IntList: []int{1, 2, 4, 5},
 	}
+
+	// Basic example
 	delta, err := diff.Compute(f1, f2)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Print("delta = ", delta)
+
+	// Example with more options
+	engine := diff.Engine{
+		ExcludeFieldList: []string{"StringVal"},
+	}
+	delta, err = engine.Compute(f1, f2)
 	if err != nil {
 		log.Fatal(err)
 	}
