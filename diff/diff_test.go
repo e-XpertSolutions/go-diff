@@ -46,5 +46,5 @@ func TestCompute(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to compute diff: ", err)
 	}
-	t.Log(string(delta.JSON()))
+	t.Log(string(delta.PrettyJSON()))
 }
