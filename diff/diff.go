@@ -51,13 +51,9 @@ const (
 )
 
 type Change struct {
-	OldVal interface{} `json:"old_value"`
-	NewVal interface{} `json:"new_value"`
-}
-
-type CollectionChange struct {
-	Val  interface{} `json:"value"`
-	Type ChangeType  `json:"type"`
+	OldVal interface{} `json:"old_value,omitempty"`
+	NewVal interface{} `json:"new_value,omitempty"`
+	Type   ChangeType  `json:"type,omitempty"`
 }
 
 func Compute(x, y interface{}, recursive bool) (Diff, error) {
@@ -110,7 +106,7 @@ func handleValue(fx, fy reflect.Value) interface{} {
 			}
 			return Change{OldVal: nil, NewVal: fy.Elem().Interface()}
 		} else if fy.IsNil() {
-			return Change{OldVal: fx.Elem().Interface(), NewVal: nil}
+			return Change{OldVal: fx.Elem().Interface(), NewVal: nil, Type: ModType}
 		}
 		return handleValue(fx.Elem(), fy.Elem())
 
@@ -121,22 +117,22 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		ix, iy := fx.Int(), fy.Int()
 		if ix != iy {
-			return Change{OldVal: ix, NewVal: iy}
+			return Change{OldVal: ix, NewVal: iy, Type: ModType}
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		uix, uiy := fx.Uint(), fy.Uint()
 		if uix != uiy {
-			return Change{OldVal: uix, NewVal: uiy}
+			return Change{OldVal: uix, NewVal: uiy, Type: ModType}
 		}
 	case reflect.Float32, reflect.Float64:
 		flx, fly := fx.Float(), fy.Float()
 		if flx-fly < 0.000001 {
-			return Change{OldVal: flx, NewVal: fly}
+			return Change{OldVal: flx, NewVal: fly, Type: ModType}
 		}
 	case reflect.String:
 		sx, sy := fx.String(), fy.String()
 		if sx != sy {
-			return Change{OldVal: sx, NewVal: sy}
+			return Change{OldVal: sx, NewVal: sy, Type: ModType}
 		}
 	}
 
@@ -174,34 +170,34 @@ func handleStruct(fx, fy reflect.Value) interface{} {
 func handleSlice(fx, fy reflect.Value) interface{} {
 	xLen, yLen := fx.Len(), fy.Len()
 
-	changes := make(map[string]CollectionChange)
+	changes := make(Diff)
 	if xLen == 0 {
 		if yLen == 0 {
 			return nil
 		}
 		for i := 0; i < yLen; i++ {
-			changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
+			changes[strconv.Itoa(i)] = Change{NewVal: fy.Index(i).Interface(), Type: AddType}
 		}
 	} else if yLen == 0 {
 		for i := 0; i < xLen; i++ {
-			changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
+			changes[strconv.Itoa(i)] = Change{OldVal: fx.Index(i).Interface(), Type: DelType}
 		}
 	} else {
 		var maxLen int
 		if xLen > yLen {
 			maxLen = yLen
 			for i := yLen; i < xLen; i++ {
-				changes[strconv.Itoa(i)] = CollectionChange{Val: fx.Index(i).Interface(), Type: DelType}
+				changes[strconv.Itoa(i)] = Change{OldVal: fx.Index(i).Interface(), Type: DelType}
 			}
 		} else if xLen < yLen {
 			maxLen = xLen
 			for i := xLen; i < yLen; i++ {
-				changes[strconv.Itoa(i)] = CollectionChange{Val: fy.Index(i).Interface(), Type: AddType}
+				changes[strconv.Itoa(i)] = Change{NewVal: fy.Index(i).Interface(), Type: AddType}
 			}
 		}
 		for i := 0; i < maxLen; i++ {
 			if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
-				changes[strconv.Itoa(i)] = CollectionChange{Val: d, Type: ModType}
+				changes[strconv.Itoa(i)] = d
 			}
 		}
 	}
