@@ -56,7 +56,26 @@ type Change struct {
 	Type   ChangeType  `json:"type,omitempty"`
 }
 
-func Compute(x, y interface{}, recursive bool) (Diff, error) {
+func Compute(x, y interface{}) (Diff, error) {
+	engine := DiffEngine{}
+	return engine.Compute(x, y)
+}
+
+type DiffEngine struct {
+	ExcludeFieldList []string
+	Recursive        bool
+}
+
+func (de DiffEngine) IsIngored(field string) bool {
+	for _, f := range de.ExcludeFieldList {
+		if f == field {
+			return true
+		}
+	}
+	return false
+}
+
+func (de DiffEngine) Compute(x, y interface{}) (Diff, error) {
 	vx, vy := reflect.ValueOf(x), reflect.ValueOf(y)
 	tx, ty := vx.Type(), vy.Type()
 
@@ -76,12 +95,15 @@ func Compute(x, y interface{}, recursive bool) (Diff, error) {
 	for i := 0; i < xNumFields; i++ {
 		fx := vx.Field(i)
 		typ := tx.Field(i)
-		if !isExported(typ.Name) { // skip non-exported fields
+
+		// skip non-exported fields and the ones that are excluded
+		if !isExported(typ.Name) || de.IsIngored(typ.Name) {
 			continue
 		}
+
 		fy := vy.FieldByName(typ.Name)
 
-		if d := handleValue(fx, fy); d != nil {
+		if d := de.handleValue(fx, fy); d != nil {
 			delta[typ.Name] = d
 		}
 	}
@@ -89,13 +111,13 @@ func Compute(x, y interface{}, recursive bool) (Diff, error) {
 	return delta, nil
 }
 
-func handleValue(fx, fy reflect.Value) interface{} {
+func (de DiffEngine) handleValue(fx, fy reflect.Value) interface{} {
 	switch fx.Kind() {
 
 	case reflect.Struct:
-		return handleStruct(fx, fy)
+		return de.handleStruct(fx, fy)
 	case reflect.Array, reflect.Slice:
-		return handleSlice(fx, fy)
+		return de.handleSlice(fx, fy)
 	case reflect.Map:
 		return nil
 
@@ -108,7 +130,7 @@ func handleValue(fx, fy reflect.Value) interface{} {
 		} else if fy.IsNil() {
 			return Change{OldVal: fx.Elem().Interface(), NewVal: nil, Type: ModType}
 		}
-		return handleValue(fx.Elem(), fy.Elem())
+		return de.handleValue(fx.Elem(), fy.Elem())
 
 	case reflect.Interface, reflect.Func, reflect.Chan, reflect.Invalid, reflect.UnsafePointer, reflect.Complex64, reflect.Complex128:
 		// TODO(gilliek): support complex numbers
@@ -139,7 +161,7 @@ func handleValue(fx, fy reflect.Value) interface{} {
 	return nil
 }
 
-func handleStruct(fx, fy reflect.Value) interface{} {
+func (de DiffEngine) handleStruct(fx, fy reflect.Value) interface{} {
 	if isFullyNonExportedStruct(fx) {
 		if !isEqual(fx, fy) {
 			return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
@@ -152,12 +174,15 @@ func handleStruct(fx, fy reflect.Value) interface{} {
 	for i := 0; i < numFields; i++ {
 		newFx := fx.Field(i)
 		typ := fx.Type().Field(i)
-		if !isExported(typ.Name) { // skip non-exported fields
+
+		// skip non-exported fields and the ones that are excluded
+		if !isExported(typ.Name) || de.IsIngored(typ.Name) {
 			continue
 		}
+
 		newFy := fy.FieldByName(typ.Name)
 
-		if d := handleValue(newFx, newFy); d != nil {
+		if d := de.handleValue(newFx, newFy); d != nil {
 			delta[typ.Name] = d
 		}
 	}
@@ -167,7 +192,7 @@ func handleStruct(fx, fy reflect.Value) interface{} {
 	return nil
 }
 
-func handleSlice(fx, fy reflect.Value) interface{} {
+func (de DiffEngine) handleSlice(fx, fy reflect.Value) interface{} {
 	xLen, yLen := fx.Len(), fy.Len()
 
 	changes := make(map[string]Change)
@@ -198,7 +223,7 @@ func handleSlice(fx, fy reflect.Value) interface{} {
 			maxLen = xLen
 		}
 		for i := 0; i < maxLen; i++ {
-			if d := handleValue(fx.Index(i), fy.Index(i)); d != nil {
+			if d := de.handleValue(fx.Index(i), fy.Index(i)); d != nil {
 				changes[strconv.Itoa(i)] = Change{NewVal: d, Type: ModType}
 			}
 		}

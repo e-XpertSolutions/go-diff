@@ -46,7 +46,7 @@ func Example() {
 		},
 		IntList: []int{1, 2, 4, 5},
 	}
-	delta, err := diff.Compute(f1, f2, false)
+	delta, err := diff.Compute(f1, f2)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -45,7 +45,7 @@ func TestCompute(t *testing.T) {
 		IntList: []int{1, 2, 4, 5},
 		BarList: []Bar{{StringVal: "ccc"}, {StringVal: "ddd"}},
 	}
-	delta, err := Compute(f1, f2, false)
+	delta, err := Compute(f1, f2)
 	if err != nil {
 		t.Fatal("Failed to compute diff: ", err)
 	}
