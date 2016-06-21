@@ -53,6 +53,7 @@ const (
 type Change struct {
 	OldVal interface{} `json:"old_value,omitempty"`
 	NewVal interface{} `json:"new_value,omitempty"`
+	Val    interface{} `json:"value,omitempty"`
 	Type   ChangeType  `json:"type,omitempty"`
 }
 
@@ -223,7 +224,7 @@ func (e Engine) handleSlice(fx, fy reflect.Value) interface{} {
 		}
 		for i := 0; i < maxLen; i++ {
 			if d := e.handleValue(fx.Index(i), fy.Index(i)); d != nil {
-				changes[strconv.Itoa(i)] = Change{NewVal: d, Type: ModType}
+				changes[strconv.Itoa(i)] = Change{Val: d, Type: ModType}
 			}
 		}
 	}
