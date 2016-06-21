@@ -126,7 +126,7 @@ func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
 			if fy.IsNil() {
 				return nil
 			}
-			return Change{OldVal: nil, NewVal: fy.Elem().Interface()}
+			return Change{OldVal: nil, NewVal: fy.Elem().Interface(), Type: ModType}
 		} else if fy.IsNil() {
 			return Change{OldVal: fx.Elem().Interface(), NewVal: nil, Type: ModType}
 		}
@@ -164,7 +164,7 @@ func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
 func (e Engine) handleStruct(fx, fy reflect.Value) interface{} {
 	if isFullyNonExportedStruct(fx) {
 		if !isEqual(fx, fy) {
-			return Change{OldVal: fx.Interface(), NewVal: fy.Interface()}
+			return Change{OldVal: fx.Interface(), NewVal: fy.Interface(), Type: ModType}
 		}
 		return nil
 	}
