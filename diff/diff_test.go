@@ -4,7 +4,11 @@
 
 package diff
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+	"time"
+)
 
 type Foo struct {
 	IntVal    int
@@ -50,4 +54,20 @@ func TestCompute(t *testing.T) {
 		t.Fatal("Failed to compute diff: ", err)
 	}
 	t.Log(string(delta.PrettyJSON()))
+}
+
+func TestIsEqual(t *testing.T) {
+	d1 := time.Date(2016, time.Month(6), 22, 10, 58, 52, 42, time.Local)
+	d2 := time.Date(2016, time.Month(6), 22, 10, 58, 52, 42, time.Local)
+	x, y := reflect.ValueOf(d1), reflect.ValueOf(d2)
+	if equal := isEqual(x, y); !equal {
+		t.Errorf("isEqual('%v', '%v'): found 'false', expected 'true'", d1, d2)
+	}
+
+	d1 = time.Date(2016, time.Month(6), 22, 10, 58, 52, 42, time.Local)
+	d2 = time.Date(2016, time.Month(6), 22, 10, 58, 52, 24, time.Local)
+	x, y = reflect.ValueOf(d1), reflect.ValueOf(d2)
+	if equal := isEqual(x, y); equal {
+		t.Errorf("isEqual('%v', '%v'): found 'true', expected 'false'", d1, d2)
+	}
 }
