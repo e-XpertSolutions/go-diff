@@ -14,6 +14,9 @@ import (
 	"strings"
 )
 
+// Tolerance used to compare floating point numbers.
+const Tolerance = 0.000001
+
 // A Diff represents the changes between two structures.
 type Diff map[string]interface{}
 
@@ -41,6 +44,8 @@ func (d Diff) JSON() []byte {
 	return bs
 }
 
+// ChangeType describes the nature of a Change (addition, deletion,
+// modification, ...).
 type ChangeType string
 
 // Possible values for a ChangeType.
@@ -50,6 +55,7 @@ const (
 	ModType ChangeType = "MOD" // modification
 )
 
+// A Change represents a change between an old and a new value.
 type Change struct {
 	OldVal interface{} `json:"old_value,omitempty"`
 	NewVal interface{} `json:"new_value,omitempty"`
@@ -57,15 +63,19 @@ type Change struct {
 	Type   ChangeType  `json:"type,omitempty"`
 }
 
+// Compute computes the differences between to objects x and y.
+//
+// x and y must be both structures and have to share the same type.
 func Compute(x, y interface{}) (Diff, error) {
 	return Engine{}.Compute(x, y)
 }
 
 type Engine struct {
 	ExcludeFieldList []string
-	Recursive        bool
+	MaxDepth         int // XXX(gilliek): not yet implemented
 }
 
+// IsIgnored reports whether a field is ignored by the Engine configuration.
 func (e Engine) IsIgnored(field string) bool {
 	for _, f := range e.ExcludeFieldList {
 		if f == field {
@@ -75,6 +85,10 @@ func (e Engine) IsIgnored(field string) bool {
 	return false
 }
 
+// Compute computes the differences between to objects x and y using the
+// parameters defined in the Engine.
+//
+// x and y must be both structures and have share the same type.
 func (e Engine) Compute(x, y interface{}) (Diff, error) {
 	vx, vy := reflect.ValueOf(x), reflect.ValueOf(y)
 	tx, ty := vx.Type(), vy.Type()
@@ -103,7 +117,7 @@ func (e Engine) Compute(x, y interface{}) (Diff, error) {
 
 		fy := vy.FieldByName(typ.Name)
 
-		if d := e.handleValue(fx, fy); d != nil {
+		if d := e.compareValues(fx, fy); d != nil {
 			delta[typ.Name] = d
 		}
 	}
@@ -111,16 +125,19 @@ func (e Engine) Compute(x, y interface{}) (Diff, error) {
 	return delta, nil
 }
 
-func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
+func (e Engine) compareValues(fx, fy reflect.Value) interface{} {
 	switch fx.Kind() {
 
+	// Structures, slices/arrays and maps must be recursively visited.
 	case reflect.Struct:
-		return e.handleStruct(fx, fy)
+		return e.compareStructs(fx, fy)
 	case reflect.Array, reflect.Slice:
-		return e.handleSlice(fx, fy)
+		return e.compareSlices(fx, fy)
 	case reflect.Map:
+		// TODO(gilliek): add support for map
 		return nil
 
+	// For pointers, only the values pointed are compared.
 	case reflect.Ptr:
 		if fx.IsNil() {
 			if fy.IsNil() {
@@ -130,12 +147,9 @@ func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
 		} else if fy.IsNil() {
 			return Change{OldVal: fx.Elem().Interface(), NewVal: nil, Type: ModType}
 		}
-		return e.handleValue(fx.Elem(), fy.Elem())
+		return e.compareValues(fx.Elem(), fy.Elem())
 
-	case reflect.Interface, reflect.Func, reflect.Chan, reflect.Invalid, reflect.UnsafePointer, reflect.Complex64, reflect.Complex128:
-		// TODO(gilliek): support complex numbers
-		return nil
-
+	// "basic" types are directly compared.
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		ix, iy := fx.Int(), fy.Int()
 		if ix != iy {
@@ -148,7 +162,7 @@ func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
 		}
 	case reflect.Float32, reflect.Float64:
 		flx, fly := fx.Float(), fy.Float()
-		if flx-fly < 0.000001 {
+		if flx-fly < Tolerance {
 			return Change{OldVal: flx, NewVal: fly, Type: ModType}
 		}
 	case reflect.String:
@@ -156,12 +170,15 @@ func (e Engine) handleValue(fx, fy reflect.Value) interface{} {
 		if sx != sy {
 			return Change{OldVal: sx, NewVal: sy, Type: ModType}
 		}
+	case reflect.Complex64, reflect.Complex128:
+		// TODO(gilliek): add support for complex numbers
+		return nil
 	}
 
 	return nil
 }
 
-func (e Engine) handleStruct(fx, fy reflect.Value) interface{} {
+func (e Engine) compareStructs(fx, fy reflect.Value) interface{} {
 	if isFullyNonExportedStruct(fx) {
 		if !isEqual(fx, fy) {
 			return Change{OldVal: fx.Interface(), NewVal: fy.Interface(), Type: ModType}
@@ -182,7 +199,7 @@ func (e Engine) handleStruct(fx, fy reflect.Value) interface{} {
 
 		newFy := fy.FieldByName(typ.Name)
 
-		if d := e.handleValue(newFx, newFy); d != nil {
+		if d := e.compareValues(newFx, newFy); d != nil {
 			delta[typ.Name] = d
 		}
 	}
@@ -192,9 +209,8 @@ func (e Engine) handleStruct(fx, fy reflect.Value) interface{} {
 	return nil
 }
 
-func (e Engine) handleSlice(fx, fy reflect.Value) interface{} {
+func (e Engine) compareSlices(fx, fy reflect.Value) interface{} {
 	xLen, yLen := fx.Len(), fy.Len()
-
 	changes := make(map[string]Change)
 	if xLen == 0 {
 		if yLen == 0 {
@@ -223,7 +239,7 @@ func (e Engine) handleSlice(fx, fy reflect.Value) interface{} {
 			maxLen = xLen
 		}
 		for i := 0; i < maxLen; i++ {
-			if d := e.handleValue(fx.Index(i), fy.Index(i)); d != nil {
+			if d := e.compareValues(fx.Index(i), fy.Index(i)); d != nil {
 				changes[strconv.Itoa(i)] = Change{Val: d, Type: ModType}
 			}
 		}
@@ -234,6 +250,7 @@ func (e Engine) handleSlice(fx, fy reflect.Value) interface{} {
 	return nil
 }
 
+// isExported reports whether a field name is exported based on its name.
 func isExported(fieldName string) bool {
 	if fieldName == "" {
 		return false
@@ -242,6 +259,10 @@ func isExported(fieldName string) bool {
 	return firstLetter != strings.ToLower(firstLetter)
 }
 
+// isFullyNonExportedStruct reports whether a structure only contains exported
+// fields.
+//
+// If s is not a struct, it returns false.
 func isFullyNonExportedStruct(s reflect.Value) bool {
 	if s.Kind() != reflect.Struct {
 		return false
@@ -256,6 +277,11 @@ func isFullyNonExportedStruct(s reflect.Value) bool {
 	return true
 }
 
+// isEqual reports whether the two values x and y are equal. x and y must be
+// two structures of the same type and being fully non-exported, meaning that
+// they only contain non exported fields (e.g. time.Time).  Since it is not
+// possible to compare such structures, this function transforms x and y into
+// strings and compare them as strings.
 func isEqual(x, y reflect.Value) bool {
 	return fmt.Sprint(x.Interface()) == fmt.Sprint(y.Interface())
 }
