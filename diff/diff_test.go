@@ -56,6 +56,26 @@ func TestCompute(t *testing.T) {
 	t.Log(string(delta.PrettyJSON()))
 }
 
+func TestIsFullyNonExportedStruct(t *testing.T) {
+	type Foo struct {
+		a int
+		b int
+	}
+	f := Foo{a: 42, b: 42}
+	if !isFullyNonExportedStruct(reflect.ValueOf(f)) {
+		t.Errorf("isFullyNonExportedStruct(Foo{a: 42, b:42}): found 'false', expected 'true'")
+	}
+
+	type Bar struct {
+		A int
+		b int
+	}
+	b := Bar{A: 42, b: 42}
+	if isFullyNonExportedStruct(reflect.ValueOf(b)) {
+		t.Errorf("isFullyNonExportedStruct(Bar{A: 42, b:42}): found 'true', expected 'false'")
+	}
+}
+
 func TestIsEqual(t *testing.T) {
 	d1 := time.Date(2016, time.Month(6), 22, 10, 58, 52, 42, time.Local)
 	d2 := time.Date(2016, time.Month(6), 22, 10, 58, 52, 42, time.Local)
