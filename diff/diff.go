@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -162,7 +163,7 @@ func (e Engine) compareValues(fx, fy reflect.Value) interface{} {
 		}
 	case reflect.Float32, reflect.Float64:
 		flx, fly := fx.Float(), fy.Float()
-		if flx-fly < Tolerance {
+		if math.Abs(flx-fly) > Tolerance {
 			return Change{OldVal: flx, NewVal: fly, Type: ModType}
 		}
 	case reflect.String:
