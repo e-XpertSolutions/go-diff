@@ -71,6 +71,7 @@ func Compute(x, y interface{}) (Diff, error) {
 	return Engine{}.Compute(x, y)
 }
 
+// An Engine provides a flexible diff calculator.
 type Engine struct {
 	ExcludeFieldList []string
 	MaxDepth         int // XXX(gilliek): not yet implemented
