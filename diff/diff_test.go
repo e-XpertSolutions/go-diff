@@ -10,21 +10,21 @@ import (
 	"time"
 )
 
-type Foo struct {
-	IntVal    int
-	FloatVal  float32
-	StringVal string
-	Bar       Bar
-	FooPtr    *Foo
-	IntList   []int
-	BarList   []Bar
-}
-
-type Bar struct {
-	StringVal string
-}
-
 func TestCompute(t *testing.T) {
+	type (
+		Bar struct {
+			StringVal string
+		}
+		Foo struct {
+			IntVal    int
+			FloatVal  float32
+			StringVal string
+			Bar       Bar
+			FooPtr    *Foo
+			IntList   []int
+			BarList   []Bar
+		}
+	)
 	f1 := Foo{
 		IntVal:    42,
 		FloatVal:  53.032,
@@ -52,6 +52,10 @@ func TestCompute(t *testing.T) {
 	delta, err := Compute(f1, f2)
 	if err != nil {
 		t.Fatal("Failed to compute diff: ", err)
+	}
+	expectedJSON := `{"BarList":{"0":{"value":{"StringVal":{"old_value":"aaa","new_value":"ccc","type":"MOD"}},"type":"MOD"},"1":{"value":{"StringVal":{"old_value":"bbb","new_value":"ddd","type":"MOD"}},"type":"MOD"}},"FloatVal":{"old_value":53.03200149536133,"new_value":53.04199981689453,"type":"MOD"},"FooPtr":{"new_value":{"IntVal":42,"FloatVal":0,"StringVal":"","Bar":{"StringVal":""},"FooPtr":null,"IntList":null,"BarList":null},"type":"MOD"},"IntList":{"1":{"value":{"old_value":3,"new_value":2,"type":"MOD"},"type":"MOD"},"3":{"new_value":5,"type":"ADD"}},"StringVal":{"old_value":"bar","new_value":"baraca","type":"MOD"}}`
+	if found := string(delta.JSON()); found != expectedJSON {
+		t.Errorf("Compute(...): found '%s', expected '%s'", found, expectedJSON)
 	}
 	t.Log(string(delta.PrettyJSON()))
 }
