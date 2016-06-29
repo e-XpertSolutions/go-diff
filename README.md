@@ -1,7 +1,8 @@
 # go-diff
 
 [![GoDoc](https://godoc.org/github.com/e-XpertSolutions/go-diff/diff?status.png)](http://godoc.org/github.com/e-XpertSolutions/go-diff/diff)
-[![Travis](https://travis-ci.org/e-XpertSolutions/go-diff.svg)](https://travis-ci.org/e-XpertSolutions/go-diff/pull_requests)
+[![Travis](https://travis-ci.org/e-XpertSolutions/go-diff.svg?branch=master)](https://travis-ci.org/e-XpertSolutions/go-diff.svg)
+
 
 go-diff is a Go package that aims to provide functions to calculate differences
 between two Go structures. The result is presented as a generic map containing
