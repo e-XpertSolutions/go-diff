@@ -1,6 +1,6 @@
-PKG  = e-xpert_solutions/go-diff/diff
+PKG  = github.com/e-XpertSolutions/go-diff/diff
 
-all: dev-deps check test cover
+all: test
 
 dev-deps:
 	@go get -u -v golang.org/x/tools/cmd/gotype
