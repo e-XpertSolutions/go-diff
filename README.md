@@ -87,13 +87,13 @@ any exported fields, the structures are compared as strings.
 
 ## TODO
 
-- [] Add support for map types
-- [] Add support for complex numbers
-- [] Allow the user to override comparisons through an interface
-- [] Add an option to limit the depth of the comparisons
-- [] Better support for slices/arrays comparison
-- [] More tests and benchmarks
-- [] Add XML serialization
+- [ ] Add support for map types
+- [ ] Add support for complex numbers
+- [ ] Allow the user to override comparisons through an interface
+- [ ] Add an option to limit the depth of the comparisons
+- [ ] Better support for slices/arrays comparison
+- [ ] More tests and benchmarks
+- [ ] Add XML serialization
 
 
 ## Contributing
@@ -107,4 +107,3 @@ just follow the standard [GitHub way](https://help.github.com/articles/using-pul
 
 The sources are release under a BSD 3-Clause License. The full terms of that
 license can be found in `LICENSE` file of this repository.
-
