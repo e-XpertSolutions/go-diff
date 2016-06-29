@@ -107,3 +107,4 @@ just follow the standard [GitHub way](https://help.github.com/articles/using-pul
 
 The sources are release under a BSD 3-Clause License. The full terms of that
 license can be found in `LICENSE` file of this repository.
+
