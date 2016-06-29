@@ -2,7 +2,37 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package diff implements diff functions to compare objects.
+// Package diff implements functions to calculate differences between objects.
+//
+// Behavior
+//
+// Basic types (int, float, bool and string) are directly compared using
+// language defined operators (== and !=).
+//
+// For pointers, only the values pointed are compared, not the addresses.
+//
+// Structures are compared recursively. If they do not contain any exported
+// fields, the structures are compared as strings.
+//
+// Slices and arrays are compared row by row.
+// Maps are not yet supported.
+//
+//
+// Limitations
+//
+// Slices and arrays are compared row by row which means that if an element is
+// moved, it will not be detected.
+//
+// Map and complex numbers are not yet supported.
+//
+// Non-pointer empty structures are compared as if they had default values.
+// Using pointers instead may provide better results.
+//
+// Structures with only non-exported fields are compared as strings using
+// fmt.Sprint.
+//
+// This package heavily uses reflection, therefore if you need performances,
+// it is probably not the best solution.
 package diff
 
 import (
