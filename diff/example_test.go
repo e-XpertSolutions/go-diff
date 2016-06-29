@@ -7,7 +7,7 @@ package diff_test
 import (
 	"log"
 
-	"e-xpert_solutions/go-diff/diff"
+	"github.com/e-XpertSolutions/go-diff/diff"
 )
 
 type Foo struct {
