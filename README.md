@@ -77,7 +77,7 @@ func main() {
 ## Diff calculation
 
 * **Basic types (int, float, bool and string):** Basic types are directly compared
-using language defined operators.
+using language defined operators (== and !=).
 * **Pointers:** The values pointed are compared, not the addresses.
 * **Structures:** Structures are compared recursively. If they do not contain
 any exported fields, the structures are compared as strings.
