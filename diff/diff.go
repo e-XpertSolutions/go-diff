@@ -150,7 +150,11 @@ func (e Engine) Compute(x, y interface{}) (Diff, error) {
 		fy := vy.FieldByName(typ.Name)
 
 		if d := e.compareValues(fx, fy); d != nil {
-			delta[typ.Name] = d
+			if name := extractJSONName(typ.Tag.Get("json")); name != "" {
+				delta[name] = d
+			} else {
+				delta[typ.Name] = d
+			}
 		}
 	}
 
@@ -232,7 +236,11 @@ func (e Engine) compareStructs(fx, fy reflect.Value) interface{} {
 		newFy := fy.FieldByName(typ.Name)
 
 		if d := e.compareValues(newFx, newFy); d != nil {
-			delta[typ.Name] = d
+			if name := extractJSONName(typ.Tag.Get("json")); name != "" {
+				delta[name] = d
+			} else {
+				delta[typ.Name] = d
+			}
 		}
 	}
 	if len(delta) > 0 {
@@ -316,4 +324,14 @@ func isFullyNonExportedStruct(s reflect.Value) bool {
 // strings and compare them as strings.
 func isEqual(x, y reflect.Value) bool {
 	return fmt.Sprint(x.Interface()) == fmt.Sprint(y.Interface())
+}
+
+// extractJSONName extracts json key name from a JSON struct tag.
+func extractJSONName(tag string) string {
+	if attrs := strings.Split(tag, ","); len(attrs) > 0 {
+		if name := strings.TrimSpace(attrs[0]); name != "-" {
+			return name
+		}
+	}
+	return ""
 }

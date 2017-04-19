@@ -95,3 +95,18 @@ func TestIsEqual(t *testing.T) {
 		t.Errorf("isEqual('%v', '%v'): found 'true', expected 'false'", d1, d2)
 	}
 }
+
+func TestExtractJSONName(t *testing.T) {
+	tests := map[string]string{
+		"-":             "",
+		",omitempty":    "",
+		"foo":           "foo",
+		"foo,omitempty": "foo",
+	}
+	for input, expected := range tests {
+		if found := extractJSONName(input); found != expected {
+			t.Errorf("extractJSONName(%q): found %q, expected %q",
+				input, found, expected)
+		}
+	}
+}
