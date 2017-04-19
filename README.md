@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/e-XpertSolutions/go-diff/diff?status.png)](http://godoc.org/github.com/e-XpertSolutions/go-diff/diff)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-yellow.svg?style=flat)](https://github.com/e-XpertSolutions/go-diff/blob/master/LICENSE)
-[![Travis](https://travis-ci.org/e-XpertSolutions/go-diff.svg?branch=master)](https://travis-ci.org/e-XpertSolutions/go-diff.svg)
+[![Travis](https://travis-ci.org/e-XpertSolutions/go-diff.svg?branch=master)](https://travis-ci.org/e-XpertSolutions/go-diff)
 
 
 go-diff is a Go package that aims to provide functions to calculate differences
