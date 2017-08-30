@@ -94,7 +94,7 @@ type Change struct {
 	Type   ChangeType  `json:"type,omitempty"`
 }
 
-// Compute computes the differences between to objects x and y.
+// Compute computes the differences between two objects x and y.
 //
 // x and y must be both structures and have to share the same type.
 func Compute(x, y interface{}) (Diff, error) {
